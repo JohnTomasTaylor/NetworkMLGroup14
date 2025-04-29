@@ -1,0 +1,17 @@
+method: bayes
+metric:
+    name: val_f1
+    goal: maximize
+parameters:
+    epochs:
+        value: 10  # Updated from 5 to 10
+    learning_rate:
+        min: 0.0001
+        max: 0.05  # Adjusted max value from 0.1 to 0.05
+        distribution: log_uniform
+    batch_size:
+        values: [8, 16, 32]  # Updated batch sizes
+    hidden_dim:
+        values: [16, 32, 64]  # Updated hidden dimensions
+    optimizer:
+        values: ["adam", "sgd"]
