@@ -2,7 +2,7 @@ import argparse
 from sklearn import set_config
 import wandb
 from src.constants import SEED
-from src.dataloading import get_dummy_pickle, get_train_val_dataset
+from src.dataloading import get_dummy_dataset, get_dummy_pickle, get_train_val_dataset
 from src.models.lstms import SimpleLSTM
 from src.training_utils import build_optimizer, create_build_dataloaders, create_train_fn
 import yaml
@@ -21,15 +21,18 @@ def main(config_file_name, project_name, count):
     with open(f"configs/{config_file_name}", "r") as file:
         config = yaml.safe_load(file)
 
-    dataset_tr, dataset_val = get_train_val_dataset(
-        tr_ratio_min=0.8,
-        tr_ratio_max=0.85,
-        seed=SEED,
-        signal_transform=None,
-        label_transform=None,
-        prefetch=False,
-        resample_label=True
-    )
+    # dataset_tr, dataset_val = get_train_val_dataset(
+    #     tr_ratio_min=0.8,
+    #     tr_ratio_max=0.85,
+    #     seed=SEED,
+    #     signal_transform=None,
+    #     label_transform=None,
+    #     prefetch=False,
+    #     resample_label=True
+    # )
+
+    dataset_tr = get_dummy_dataset(64, signal_transform=None, label_transform=None, offset=0)
+    dataset_val = get_dummy_dataset(64, signal_transform=None, label_transform=None, offset=32)
 
     build_dataset = create_build_dataloaders(dataset_tr, dataset_val)
 
