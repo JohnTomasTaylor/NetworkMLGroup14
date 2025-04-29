@@ -102,6 +102,10 @@ def validate(dataloader: DataLoader,
 def compute_metrics(labels: List[int], logits: List[float], is_binary: bool = True) -> Dict[str, float]:
     """
     Calculates metrics from labels and logits
+    - accuracy
+    - precision
+    - macro-f1
+    - recall
     """
     if is_binary:
         preds = (np.array(logits) > 0.0).astype(int)
@@ -118,37 +122,12 @@ def compute_metrics(labels: List[int], logits: List[float], is_binary: bool = Tr
     return metrics
 
 
-sweep_config = {
-    'method': 'bayes',  # ou 'grid', 'random'
-    'metric': {
-        'name': 'val_f1',
-        'goal': 'maximize'
-    },
-    'parameters': {
-        'epochs': {
-            'value': 5
-        },
-        'learning_rate': {
-            'min': 0.0001,
-            'max': 0.1,
-            'distribution': 'log_uniform'
-        },
-        'batch_size': {
-            'values': [1, 2, 4]
-        },
-        'hidden_dim': {
-            'values': [2, 4, 8]
-        },
-        'optimizer': {
-            'values': ["adam", "sgd"]
-        }
-    }
-}
-
-
 def create_train_fn(build_dataset_fn, build_network_fn, build_optimizer_fn):
+    """
+    Create the wandb train_agent function that iterates through a run and logs the results
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
     def train(config=None):
         # Initialize a new wandb run
         with wandb.init(config=config):
@@ -172,9 +151,14 @@ def create_train_fn(build_dataset_fn, build_network_fn, build_optimizer_fn):
                     **{f'train_{k}': v for k, v in train_metrics.items()},
                     **{f'val_{k}': v for k, v in val_metrics.items()}
                 })
+                # TODO checkpoints, early-stopping maybe
+
     return train
 
 def build_optimizer(network, optimizer, learning_rate):
+    """
+    Builds the optimizer for the run according to the wandb configs
+    """
     if optimizer == "sgd":
         optimizer = optim.SGD(network.parameters(),
                               lr=learning_rate, momentum=0.9)

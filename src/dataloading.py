@@ -5,9 +5,7 @@ from seiz_eeg.utils import patient_split, resample_label
 import numpy as np
 from torch.utils.data import Dataset
 
-data_path = "/home/ogut/data"
-
-DATA_ROOT = Path(data_path)
+from src.constants import DATA_ROOT, SEED
 
 
 def load_clips_csv(train=True, resample_labels=False):
@@ -33,9 +31,36 @@ def split_train_val(clips_df, tr_ratio_min, tr_ratio_max, seed=1, print_res=True
         print(f"Ratio training/total: {len(clips_training)/(len(clips_training)+len(clips_val))}")
 
     return clips_training, clips_val
+
+def get_train_val_dataset(
+    tr_ratio_min, 
+    tr_ratio_max, 
+    seed=SEED,
+    signal_transform=None,
+    label_transform=None,
+    prefetch=True,
+    resample_label=False
+):
+    clips_df = load_clips_csv(train=True, resample_labels=resample_label)
+    clips_tr, clips_val = split_train_val(clips_df,tr_ratio_min, tr_ratio_max, seed)
+    dataset_tr = EEGDataset(
+        clips_tr,
+        signals_root=DATA_ROOT / "train",
+        signal_transform=signal_transform,
+        label_transform=label_transform,
+        prefetch=prefetch,
+    )
+    dataset_val = EEGDataset(
+        clips_val,
+        signals_root=DATA_ROOT / "train",
+        signal_transform=signal_transform,
+        label_transform=label_transform,
+        prefetch=prefetch,
+    )
+
+    return dataset_tr, dataset_val
     
-    
-# Check
+
 def get_dummy_dataset(nb_samples, signal_transform=None, label_transform=None, offset=0):
     clips_df = load_clips_csv(train=True, resample_labels=False)
     return EEGDataset(
