@@ -166,3 +166,11 @@ def build_optimizer(network, optimizer, learning_rate):
         optimizer = optim.Adam(network.parameters(),
                                lr=learning_rate)
     return optimizer
+
+def create_build_dataloaders(dataset_tr, dataset_val):
+    def build_dataset(config):
+        loader_tr = DataLoader(dataset_tr, batch_size=config.batch_size, shuffle=True)
+        loader_val = DataLoader(dataset_val, batch_size=config.batch_size, shuffle=False)
+        return loader_tr, loader_val
+    
+    return build_dataset
