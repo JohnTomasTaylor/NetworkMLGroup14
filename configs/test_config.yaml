@@ -11,7 +11,13 @@ parameters:
         distribution: log_uniform
     batch_size:
         values: [8, 16, 32]  # Updated batch sizes
+    input_dim:
+        value: 19
     hidden_dim:
         values: [16, 32, 64]  # Updated hidden dimensions
+    num_layers:
+        value: 1
+    dropout:
+        value: 0.0
     optimizer:
         values: ["adam", "sgd"]
