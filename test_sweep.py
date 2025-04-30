@@ -7,6 +7,8 @@ from src.models.lstms import SimpleLSTM
 from src.training_utils import build_optimizer, create_build_dataloaders, create_train_fn
 import yaml
 
+from src.transforms import fft_filtering
+
 
 def build_lstm(config):
     return SimpleLSTM(
@@ -25,12 +27,13 @@ def main(config_file_name, project_name, count):
         tr_ratio_min=0.8,
         tr_ratio_max=0.85,
         seed=SEED,
-        signal_transform=None,
+        signal_transform=fft_filtering,
         label_transform=None,
         prefetch=True,
         resample_label=False
     )
 
+    print(dataset_tr[0][0].shape)
     # dataset_tr = get_dummy_dataset(64, signal_transform=None, label_transform=None, offset=0)
     # dataset_val = get_dummy_dataset(64, signal_transform=None, label_transform=None, offset=32)
     # print(dataset_tr[0], dataset_tr[32])

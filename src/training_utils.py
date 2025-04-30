@@ -72,7 +72,7 @@ def train_epoch(
                         print(f"Previous gradient norm for {name}: {previous_gradients[name]}")
                         previous_gradients[name] = grad_norm
 
-            optimizer.step()
+        optimizer.step()
         
         running_loss += loss.item() * inputs.size(0)
         all_labels.extend(labels.cpu().flatten().tolist())
