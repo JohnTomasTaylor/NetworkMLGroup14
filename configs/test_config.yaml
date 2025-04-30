@@ -22,3 +22,5 @@ parameters:
     optimizer:
         value: "adam"
         # values: ["adam", "sgd"]
+seed:
+    1

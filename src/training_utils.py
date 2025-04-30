@@ -29,9 +29,6 @@ def seed_everything(seed: int):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-
-seed_everything(1)
-
 # check
 def train_epoch(
     dataloader: DataLoader, 
@@ -137,7 +134,7 @@ def compute_metrics(labels: List[int], logits: List[float], is_binary: bool = Tr
     return metrics
 
 
-def create_train_fn(build_dataset_fn, build_network_fn, build_optimizer_fn):
+def create_train_fn(build_dataset_fn, build_network_fn, build_optimizer_fn, train_epoch=train_epoch):
     """
     Create the wandb train_agent function that iterates through a run and logs the results
     """

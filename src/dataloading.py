@@ -5,7 +5,7 @@ from seiz_eeg.utils import patient_split, resample_label
 import numpy as np
 from torch.utils.data import Dataset
 
-from src.constants import DATA_ROOT, SEED
+from src.constants import DATA_ROOT
 
 
 def load_clips_csv(train=True, resample_labels=False):
@@ -35,7 +35,7 @@ def split_train_val(clips_df, tr_ratio_min, tr_ratio_max, seed=1, print_res=True
 def get_train_val_dataset(
     tr_ratio_min, 
     tr_ratio_max, 
-    seed=SEED,
+    seed=1,
     signal_transform=None,
     label_transform=None,
     prefetch=True,
