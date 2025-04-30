@@ -130,8 +130,8 @@ def compute_metrics(labels: List[int], logits: List[float], is_binary: bool = Tr
     metrics = {
         'accuracy': accuracy_score(labels, preds),
         'f1': f1_score(labels, preds, average='macro'),
-        'precision': precision_score(labels, preds, average='weighted'),
-        'recall': recall_score(labels, preds, average='weighted'),
+        'precision': precision_score(labels, preds, average='weighted', zero_division=0.0),
+        'recall': recall_score(labels, preds, average='weighted', zero_division=0.0),
     }
     
     return metrics
