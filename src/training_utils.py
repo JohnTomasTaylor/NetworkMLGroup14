@@ -9,6 +9,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
+import tqdm
 import wandb
 from seiz_eeg.dataset import EEGDataset
 
@@ -57,7 +58,21 @@ def train_epoch(
         loss = criterion(outputs, labels)
         
         loss.backward()
-        optimizer.step()
+        if torch.isnan(loss):
+            print("NaN loss detected!")
+            print("Loss:", loss.item())
+            print("Inputs:", inputs)
+            print("Labels:", labels)
+            previous_gradients = {}
+            for name, param in model.named_parameters():
+                if param.grad is not None:
+                    grad_norm = torch.norm(param.grad).item()
+                    print(f"Gradient norm for {name}: {grad_norm}")
+                    if name in previous_gradients:
+                        print(f"Previous gradient norm for {name}: {previous_gradients[name]}")
+                        previous_gradients[name] = grad_norm
+
+            optimizer.step()
         
         running_loss += loss.item() * inputs.size(0)
         all_labels.extend(labels.cpu().flatten().tolist())
@@ -135,12 +150,12 @@ def create_train_fn(build_dataset_fn, build_network_fn, build_optimizer_fn):
             # this config will be set by Sweep Controller
             config = wandb.config
 
-            tr_loader, val_loader = build_dataset_fn(config.batch_size)
-            network = build_network_fn(config)
+            tr_loader, val_loader = build_dataset_fn(config)
+            network = build_network_fn(config).to(device)
             criterion = nn.BCEWithLogitsLoss().to(device)
             optimizer = build_optimizer_fn(network, config.optimizer, config.learning_rate)
 
-            for epoch in range(config.epochs):
+            for epoch in tqdm.tqdm(range(config.epochs)):
                 train_loss, train_metrics = train_epoch(tr_loader, network, optimizer, criterion, device)
                 val_loss, val_metrics = validate(val_loader, network, criterion, device)
 

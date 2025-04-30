@@ -4,20 +4,21 @@ metric:
     goal: maximize
 parameters:
     epochs:
-        value: 10  # Updated from 5 to 10
+        value: 2 
     learning_rate:
         min: 0.0001
-        max: 0.05  # Adjusted max value from 0.1 to 0.05
-        distribution: log_uniform
+        max: 0.05  
+        distribution: log_uniform_values
     batch_size:
-        values: [8, 16, 32]  # Updated batch sizes
+        values: [32, 64, 128]  
     input_dim:
         value: 19
     hidden_dim:
-        values: [16, 32, 64]  # Updated hidden dimensions
+        values: [16, 32, 64, 128, 256]
     num_layers:
-        value: 1
+        values: [1, 2]
     dropout:
-        value: 0.0
+        values: [0.0, 0.1, 0.3]
     optimizer:
-        values: ["adam", "sgd"]
+        value: "adam"
+        # values: ["adam", "sgd"]

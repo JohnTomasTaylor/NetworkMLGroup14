@@ -21,18 +21,20 @@ def main(config_file_name, project_name, count):
     with open(f"configs/{config_file_name}", "r") as file:
         config = yaml.safe_load(file)
 
-    # dataset_tr, dataset_val = get_train_val_dataset(
-    #     tr_ratio_min=0.8,
-    #     tr_ratio_max=0.85,
-    #     seed=SEED,
-    #     signal_transform=None,
-    #     label_transform=None,
-    #     prefetch=False,
-    #     resample_label=True
-    # )
+    dataset_tr, dataset_val = get_train_val_dataset(
+        tr_ratio_min=0.8,
+        tr_ratio_max=0.85,
+        seed=SEED,
+        signal_transform=None,
+        label_transform=None,
+        prefetch=True,
+        resample_label=False
+    )
 
-    dataset_tr = get_dummy_dataset(64, signal_transform=None, label_transform=None, offset=0)
-    dataset_val = get_dummy_dataset(64, signal_transform=None, label_transform=None, offset=32)
+    # dataset_tr = get_dummy_dataset(64, signal_transform=None, label_transform=None, offset=0)
+    # dataset_val = get_dummy_dataset(64, signal_transform=None, label_transform=None, offset=32)
+    # print(dataset_tr[0], dataset_tr[32])
+    # print(dataset_val[0])
 
     build_dataset = create_build_dataloaders(dataset_tr, dataset_val)
 
