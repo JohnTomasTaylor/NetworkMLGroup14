@@ -151,7 +151,7 @@ def compute_metrics(labels: List[int], logits: List[float], is_binary: bool = Tr
 
 def create_train_fn(
         build_dataloaders_fn, 
-        build_network_fn, 
+        build_model_fn, 
         build_optimizer_fn, 
         train_epoch_fn=train_epoch,
         validate_fn=validate,
@@ -164,7 +164,7 @@ def create_train_fn(
     Args:
         build_dataloaders_fn (callable): A function that takes a `config` dictionary and 
             returns a tuple of PyTorch DataLoaders (train_loader, val_loader)
-        build_network_fn (callable): A function that takes a `config` dictionary and 
+        build_model_fn (callable): A function that takes a `config` dictionary and 
             returns a PyTorch model (nn.Module).
         build_optimizer_fn (callable): A function that takes a model, an optimizer name, 
             and a learning rate, and returns an optimizer instance.
@@ -182,20 +182,21 @@ def create_train_fn(
     def train(config=None):
         # Initialize a new wandb run
         with wandb.init(config=config) as run:
-            config = wandb.config
+            # Transform wandb config to dict so access always uses dict syntax
+            config = dict(wandb.config)
 
             tr_loader, val_loader = build_dataloaders_fn(config)
-            network = build_network_fn(dict(config)).to(device)
-            # TODO: Add as a param
+            model = build_model_fn(config).to(device)
+            # TODO: Add criterion as a param
             criterion = nn.BCEWithLogitsLoss().to(device)
-            optimizer = build_optimizer_fn(network, config.optimizer, config.learning_rate)
+            optimizer = build_optimizer_fn(model, config["optimizer"], config["learning_rate"])
 
             # Prepare the checkpoin directories
-            create_checkpoint_dirs(run.id, config, network, checkpoints=bool(checkpoint_freq))
+            create_checkpoint_dirs(run.id, config, model, checkpoints=bool(checkpoint_freq))
 
-            for epoch in tqdm.tqdm(range(config.epochs)):
-                train_loss, train_metrics = train_epoch_fn(tr_loader, network, optimizer, criterion, device)
-                val_loss, val_metrics = validate_fn(val_loader, network, criterion, device)
+            for epoch in tqdm.tqdm(range(config["epochs"])):
+                train_loss, train_metrics = train_epoch_fn(tr_loader, model, optimizer, criterion, device)
+                val_loss, val_metrics = validate_fn(val_loader, model, criterion, device)
 
                 wandb.log({
                     'epoch': epoch,
@@ -204,20 +205,19 @@ def create_train_fn(
                     **{f'train_{k}': v for k, v in train_metrics.items()},
                     **{f'val_{k}': v for k, v in val_metrics.items()}
                 })
-                # TODO checkpoints, early-stopping maybe
 
                 if checkpoint_freq and (epoch + 1) % checkpoint_freq == 0:
                     torch.save({
                         'epoch': epoch,
-                        'model_state_dict': network.state_dict(),
+                        'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
                     }, get_checkpoint_model_path(run.id, epoch))
 
 
-            # Save final version of network and optimizer
+            # Save final version of model and optimizer
             torch.save({
                 'epoch': epoch,
-                'model_state_dict': network.state_dict(),
+                'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
             }, get_final_model_path(run.id))
 
@@ -230,7 +230,7 @@ def get_final_model_path(run_id, base_path="model_weights"):
 def get_checkpoint_model_path(run_id, epoch, base_path="model_weights"):
     return Path(base_path) / run_id / "checkpoints" / f"epoch_{epoch + 1}.pt"
 
-def create_checkpoint_dirs(run_id, config, network, base_path="model_weights", checkpoints=True):
+def create_checkpoint_dirs(run_id, config, model, base_path="model_weights", checkpoints=True):
     """
     Creates the following dir structure
     /base_path
@@ -245,33 +245,25 @@ def create_checkpoint_dirs(run_id, config, network, base_path="model_weights", c
         checkpoints_dir = run_dir / "checkpoints"
         checkpoints_dir.mkdir(exist_ok=True)
         
+    # Save the config as a YAML file with model class name
+    config['model_class'] = str(model.__class__.__name__)
     
-    # Save the config as a YAML file with network class name
-    config_dict = dict(config)
-    config_dict['network_class'] = str(network.__class__.__name__)
-    
-    config_path = run_dir / "config.yaml"
-    with open(config_path, 'w') as f:
-        yaml.dump(config_dict, f)
-    
-    # return {
-    #     "run_dir": run_dir,
-    #     "checkpoints_dir": checkpoints_dir,
-    #     "config_path": config_path
-    # }
+    config = run_dir / "config.yaml"
+    with open(config, 'w') as f:
+        yaml.dump(config, f)
 
-def load_checkpoint(checkpoint_path, run_config_path, build_network_fn):
+def load_checkpoint(checkpoint_path, run_config_path, build_model_fn):
     """
     Loads a checkpoint and its configuration to CPU.
 
     Args:
         checkpoint_path (str or Path): Path to the saved model checkpoint (.pt file).
         run_config_path (str or Path): Path to the YAML configuration file for the run.
-        build_network_fn: The function to build an instance of the network based on a yaml config file
+        build_model_fn: The function to build an instance of the model based on a yaml config file
         CAREFUL! Not the same as a wandb config
 
     Returns:
-        network (nn.Module): The model with loaded state_dict.
+        model (nn.Module): The model with loaded state_dict.
         optimizer (torch.optim.Optimizer): The optimizer with loaded state_dict.
         config (dict): The configuration dictionary.
     """
@@ -280,26 +272,26 @@ def load_checkpoint(checkpoint_path, run_config_path, build_network_fn):
         config = yaml.safe_load(f)
 
     # Dynamically load model class based on saved config
-    network = build_network_fn(config)
-    optimizer = build_optimizer(network, config["optimizer"], config["learning_rate"])
+    model = build_model_fn(config)
+    optimizer = build_optimizer(model, config["optimizer"], config["learning_rate"])
 
     checkpoint = torch.load(checkpoint_path, map_location=torch.device("cpu"))
-    network.load_state_dict(checkpoint["model_state_dict"])
+    model.load_state_dict(checkpoint["model_state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
-    return network, optimizer, config
+    return model, optimizer, config
 
 
 
-def build_optimizer(network, optimizer, learning_rate):
+def build_optimizer(model, optimizer, learning_rate):
     """
     Builds the optimizer for the run according to the wandb configs
     """
     if optimizer == "sgd":
-        optimizer = optim.SGD(network.parameters(),
+        optimizer = optim.SGD(model.parameters(),
                               lr=learning_rate, momentum=0.9)
     elif optimizer == "adam":
-        optimizer = optim.Adam(network.parameters(),
+        optimizer = optim.Adam(model.parameters(),
                                lr=learning_rate)
     return optimizer
 
@@ -317,8 +309,8 @@ def create_build_dataloaders(dataset_tr, dataset_val):
     """
 
     def build_dataset(config):
-        loader_tr = DataLoader(dataset_tr, batch_size=config.batch_size, shuffle=True)
-        loader_val = DataLoader(dataset_val, batch_size=config.batch_size, shuffle=False)
+        loader_tr = DataLoader(dataset_tr, batch_size=config["batch_size"], shuffle=True)
+        loader_val = DataLoader(dataset_val, batch_size=config["batch_size"], shuffle=False)
         return loader_tr, loader_val
     
     return build_dataset
@@ -361,7 +353,7 @@ def run_sweep(
     # Create the training function with the provided components
     train_fn = create_train_fn(
         build_dataloaders_fn=build_dataloaders_fn,
-        build_network_fn=build_model_fn,
+        build_model_fn=build_model_fn,
         build_optimizer_fn=build_optimizer_fn,
         train_epoch_fn=train_epoch_fn,
         validate_fn=validate_fn,

@@ -3,7 +3,7 @@ from sklearn import set_config
 import wandb
 from src.dataloading import get_dummy_dataset, get_dummy_pickle, get_train_val_dataset
 from src.models.lstms import SimpleLSTM
-from src.training_utils import build_optimizer, create_build_dataloaders, create_train_fn, run_sweep, seed_everything
+from src.training_utils import build_optimizer, create_build_dataloaders, create_train_fn, run_sweep, seed_everything, load_checkpoint
 import yaml
 
 from src.transforms import fft_filtering
@@ -11,12 +11,11 @@ from src.transforms import fft_filtering
 # Function that maps the wandb config to a SimpleLSTM instance
 def build_lstm(config):
     return SimpleLSTM(
-        input_dim=config.input_dim,
-        hidden_dim=config.hidden_dim,
-        num_layers=config.num_layers,
-        dropout=config.dropout
+        input_dim=config["input_dim"],
+        hidden_dim=config["hidden_dim"],
+        num_layers=config["num_layers"],
+        dropout=config["dropout"]
     )
-
 
 def main(config_file_path, wandb_project_name, count, seed, checkpoint_freq):
     dataset_tr, dataset_val = get_train_val_dataset(
@@ -41,7 +40,7 @@ def main(config_file_path, wandb_project_name, count, seed, checkpoint_freq):
         build_model_fn=build_lstm,
         build_optimizer_fn=build_optimizer,
     )   
-    
+
     return sweep_id
 
 if __name__ == "__main__":

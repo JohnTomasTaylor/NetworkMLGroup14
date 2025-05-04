@@ -45,7 +45,7 @@ class EEGTransformer(nn.Module):
         d_model=64,             # Embedding dimension
         nhead=8,                # Number of attention heads
         num_encoder_layers=4,   # Number of transformer encoder layers
-        dim_feedforward=256,    # Dimension of feedforward network
+        dim_feedforward=256,    # Dimension of feedforward model
         dropout=0.1,            # Dropout rate
         max_seq_length=150,     # Maximum sequence length
     ):
