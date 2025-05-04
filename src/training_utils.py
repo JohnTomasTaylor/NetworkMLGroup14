@@ -173,6 +173,8 @@ def create_train_fn(
             (train_loss, train_metrics).
         validate (callable): A function that takes (val_loader, model, criterion, device) 
             and performs validation, returning (val_loss, val_metrics).
+        checkpoint_freq (int): The number of epochs between each checkpoint. 
+            If None only final weights of the run are saved
 
     Returns:
         callable: A `train` function for wandb sweeps, logging metrics per epoch.
