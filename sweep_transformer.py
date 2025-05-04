@@ -1,6 +1,6 @@
 import argparse
+from src.models.transformers import EEGTransformer
 from src.dataloading import get_train_val_dataset
-from src.models.lstms import SimpleLSTM
 from src.training_utils import build_optimizer, create_build_dataloaders, run_sweep
 
 from src.transforms import fft_filtering
@@ -28,7 +28,7 @@ def main(config_file_path, wandb_project_name, count, seed, checkpoint_freq):
         seed=seed,
         sweep_run_count=count,
         checkpoint_freq=checkpoint_freq,
-        model_class=SimpleLSTM,
+        model_class=EEGTransformer,
         build_dataloaders_fn=build_dataloaders_fn,
         build_optimizer_fn=build_optimizer,
     )

@@ -249,8 +249,7 @@ def create_checkpoint_dirs(run_id, config, model, base_path="model_weights", che
         
     # Save the config as a YAML file with model class name
     config['model_class'] = str(model.__class__.__name__)
-    print(config)
-    print(type(config))
+    
     config_path = run_dir / "config.yaml"
     with open(config_path, 'w') as f:
         yaml.dump(config, f)
