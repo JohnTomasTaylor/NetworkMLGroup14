@@ -8,7 +8,7 @@ import yaml
 
 from src.transforms import fft_filtering
 
-
+# Function that maps the wandb config to a SimpleLSTM instance
 def build_lstm(config):
     return SimpleLSTM(
         input_dim=config.input_dim,
@@ -18,7 +18,7 @@ def build_lstm(config):
     )
 
 
-def main(config_file_path, wandb_project_name, count, seed):
+def main(config_file_path, wandb_project_name, count, seed, checkpoint_freq):
     dataset_tr, dataset_val = get_train_val_dataset(
         tr_ratio_min=0.8,
         tr_ratio_max=0.85,
@@ -36,6 +36,7 @@ def main(config_file_path, wandb_project_name, count, seed):
         config_path=config_file_path,
         seed=seed,
         sweep_run_count=count,
+        checkpoint_freq=checkpoint_freq,
         build_dataloaders_fn=build_dataloaders_fn,
         build_model_fn=build_lstm,
         build_optimizer_fn=build_optimizer,
@@ -49,6 +50,7 @@ if __name__ == "__main__":
     parser.add_argument("--project_name", type=str, default="pytorch-lstm-sweep", help="Name of the WandB project.")
     parser.add_argument("--count", type=int, default=20, help="Number of runs for the sweep.")
     parser.add_argument("--seed", type=int, default=1, help="Seed to use for the experiments")
+    parser.add_argument("--checkpoint_freq", type=int, default=None, help="The number of epochs between each checkpoint")
     args = parser.parse_args()
 
-    main(args.config_file_path, args.project_name, args.count, args.seed)
+    main(args.config_file_path, args.project_name, args.count, args.seed, args.checkpoint_freq)

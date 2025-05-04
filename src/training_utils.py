@@ -154,7 +154,8 @@ def create_train_fn(
         build_network_fn, 
         build_optimizer_fn, 
         train_epoch_fn=train_epoch,
-        validate_fn=validate
+        validate_fn=validate,
+        checkpoint_freq=None,
     ):
     """
     Generates a `train` function for wandb integration, handling dataset setup, model 
@@ -180,7 +181,7 @@ def create_train_fn(
 
     def train(config=None):
         # Initialize a new wandb run
-        with wandb.init(config=config):
+        with wandb.init(config=config) as run:
             config = wandb.config
 
             tr_loader, val_loader = build_dataloaders_fn(config)
@@ -188,6 +189,9 @@ def create_train_fn(
             # TODO: Add as a param
             criterion = nn.BCEWithLogitsLoss().to(device)
             optimizer = build_optimizer_fn(network, config.optimizer, config.learning_rate)
+
+            # Prepare the checkpoin directories
+            create_checkpoint_dirs(run.id, config, network, checkpoints=bool(checkpoint_freq))
 
             for epoch in tqdm.tqdm(range(config.epochs)):
                 train_loss, train_metrics = train_epoch_fn(tr_loader, network, optimizer, criterion, device)
@@ -202,7 +206,60 @@ def create_train_fn(
                 })
                 # TODO checkpoints, early-stopping maybe
 
+                if checkpoint_freq and (epoch + 1) % checkpoint_freq == 0:
+                    torch.save({
+                        'epoch': epoch,
+                        'model_state_dict': network.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                    }, get_checkpoint_model_path(run.id, epoch))
+
+
+            # Save final version of network and optimizer
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': network.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+            }, get_final_model_path(run.id))
+
+
     return train
+
+def get_final_model_path(run_id, base_path="model_weights"):
+    return Path(base_path) / run_id / "final_checkpoint.pt"
+
+def get_checkpoint_model_path(run_id, epoch, base_path="model_weights"):
+    return Path(base_path) / run_id / "checkpoints" / f"epoch_{epoch + 1}.pt"
+
+def create_checkpoint_dirs(run_id, config, network, base_path="model_weights", checkpoints=True):
+    """
+    Creates the following dir structure
+    /base_path
+        /run_id
+            /checkpoints
+            config (the saved hyperparamters configs of the current run) is an instance of wandb.config
+    """
+    run_dir = Path(base_path) / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    if checkpoints:
+        checkpoints_dir = run_dir / "checkpoints"
+        checkpoints_dir.mkdir(exist_ok=True)
+        
+    
+    # Save the config as a YAML file with network class name
+    config_dict = dict(config)
+    config_dict['network_class'] = str(network.__class__.__name__)
+    
+    config_path = run_dir / "config.yaml"
+    with open(config_path, 'w') as f:
+        yaml.dump(config_dict, f)
+    
+    # return {
+    #     "run_dir": run_dir,
+    #     "checkpoints_dir": checkpoints_dir,
+    #     "config_path": config_path
+    # }
+
 
 def build_optimizer(network, optimizer, learning_rate):
     """
@@ -242,6 +299,7 @@ def run_sweep(
     config_path: str,
     seed: int,
     sweep_run_count: int,
+    checkpoint_freq: int,
     build_dataloaders_fn,
     build_model_fn,
     build_optimizer_fn,
@@ -276,7 +334,8 @@ def run_sweep(
         build_network_fn=build_model_fn,
         build_optimizer_fn=build_optimizer_fn,
         train_epoch_fn=train_epoch_fn,
-        validate_fn=validate_fn
+        validate_fn=validate_fn,
+        checkpoint_freq=checkpoint_freq
     )
     
     sweep_id = wandb.sweep(sweep_config, project=project_name)
