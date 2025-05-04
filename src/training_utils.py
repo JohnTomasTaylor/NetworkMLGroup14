@@ -189,8 +189,6 @@ def create_train_fn(
 
             tr_loader, val_loader = build_dataloaders_fn(config)
             model = build_model(model_class, config).to(device)
-            print(config)
-            print(model)
             # TODO: Add criterion as a param
             criterion = nn.BCEWithLogitsLoss().to(device)
             optimizer = build_optimizer_fn(model, config["optimizer"], config["learning_rate"])
@@ -251,9 +249,10 @@ def create_checkpoint_dirs(run_id, config, model, base_path="model_weights", che
         
     # Save the config as a YAML file with model class name
     config['model_class'] = str(model.__class__.__name__)
-    
-    config = run_dir / "config.yaml"
-    with open(config, 'w') as f:
+    print(config)
+    print(type(config))
+    config_path = run_dir / "config.yaml"
+    with open(config_path, 'w') as f:
         yaml.dump(config, f)
 
 def load_checkpoint(checkpoint_path, run_config_path, model_class):

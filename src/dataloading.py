@@ -72,19 +72,3 @@ def get_dummy_dataset(nb_samples, signal_transform=None, label_transform=None, o
     )
 
 
-def get_dummy_pickle():
-    import pickle
-    from torch.utils.data import DataLoader
-    # Load the dataset
-    with open('dataset.pkl', 'rb') as f:
-        dataset = pickle.load(f)
-
-    # Load the dataloader configuration
-    with open('dataloader_config.pkl', 'rb') as f:
-        dataloader_config = pickle.load(f)
-
-    # Recreate the dataloader
-    dataloader = DataLoader(dataset, **dataloader_config)
-    return dataloader
-
-
