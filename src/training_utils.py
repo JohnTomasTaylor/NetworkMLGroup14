@@ -150,11 +150,11 @@ def compute_metrics(labels: List[int], logits: List[float], is_binary: bool = Tr
 
 
 def create_train_fn(
+        model_class,
         build_dataloaders_fn, 
-        build_model_fn, 
-        build_optimizer_fn, 
-        train_epoch_fn=train_epoch,
-        validate_fn=validate,
+        build_optimizer_fn,
+        train_epoch_fn,
+        validate_fn,
         checkpoint_freq=None,
     ):
     """
@@ -162,10 +162,10 @@ def create_train_fn(
     initialization, training, validation, and logging. 
 
     Args:
+        model_class (Type[nn.Module]): The actual model class to be instantiated.
+            This should be a class reference (e.g., MyModel), not a string.
         build_dataloaders_fn (callable): A function that takes a `config` dictionary and 
             returns a tuple of PyTorch DataLoaders (train_loader, val_loader)
-        build_model_fn (callable): A function that takes a `config` dictionary and 
-            returns a PyTorch model (nn.Module).
         build_optimizer_fn (callable): A function that takes a model, an optimizer name, 
             and a learning rate, and returns an optimizer instance.
         train_epoch (callable): A function that takes (train_loader, model, optimizer, 
@@ -188,7 +188,9 @@ def create_train_fn(
             config = dict(wandb.config)
 
             tr_loader, val_loader = build_dataloaders_fn(config)
-            model = build_model_fn(config).to(device)
+            model = build_model(model_class, config).to(device)
+            print(config)
+            print(model)
             # TODO: Add criterion as a param
             criterion = nn.BCEWithLogitsLoss().to(device)
             optimizer = build_optimizer_fn(model, config["optimizer"], config["learning_rate"])
@@ -254,15 +256,14 @@ def create_checkpoint_dirs(run_id, config, model, base_path="model_weights", che
     with open(config, 'w') as f:
         yaml.dump(config, f)
 
-def load_checkpoint(checkpoint_path, run_config_path, build_model_fn):
+def load_checkpoint(checkpoint_path, run_config_path, model_class):
     """
     Loads a checkpoint and its configuration to CPU.
 
     Args:
         checkpoint_path (str or Path): Path to the saved model checkpoint (.pt file).
         run_config_path (str or Path): Path to the YAML configuration file for the run.
-        build_model_fn: The function to build an instance of the model based on a yaml config file
-        CAREFUL! Not the same as a wandb config
+        model_class (class name): The model class that needs to be loaded ex: SimpleLSTM
 
     Returns:
         model (nn.Module): The model with loaded state_dict.
@@ -274,7 +275,7 @@ def load_checkpoint(checkpoint_path, run_config_path, build_model_fn):
         config = yaml.safe_load(f)
 
     # Dynamically load model class based on saved config
-    model = build_model_fn(config)
+    model = build_model(model_class, config)
     optimizer = build_optimizer(model, config["optimizer"], config["learning_rate"])
 
     checkpoint = torch.load(checkpoint_path, map_location=torch.device("cpu"))
@@ -283,6 +284,24 @@ def load_checkpoint(checkpoint_path, run_config_path, build_model_fn):
 
     return model, optimizer, config
 
+
+def build_model(model_class, config: dict):
+    """
+    Instantiates a model from the given model class using parameters specified in the config dictionary.
+    The model parameters are dynamically inferred from the model_class signature
+    Args:
+        model_class (Type[nn.Module]): The actual model class to be instantiated.
+            This should be a class reference (e.g., MyModel), not a string.
+        config (dict): A dictionary containing configuration parameters.
+            Only keys that match parameter names in the model_class constructor will be used.
+    Returns:
+        An instantiated model object of the specified model_class.
+    """
+    
+    import inspect
+    constructor_params = inspect.signature(model_class).parameters
+    model_kwargs = {k: config[k] for k in constructor_params if k in config}
+    return model_class(**model_kwargs)
 
 
 def build_optimizer(model, optimizer, learning_rate):
@@ -324,8 +343,8 @@ def run_sweep(
     seed: int,
     sweep_run_count: int,
     checkpoint_freq: int,
+    model_class,
     build_dataloaders_fn,
-    build_model_fn,
     build_optimizer_fn,
     train_epoch_fn=train_epoch,
     validate_fn=validate,
@@ -338,8 +357,9 @@ def run_sweep(
         config_path: Path to the YAML configuration file containing sweep parameters
         seed: Random seed for reproducibility
         sweep_run_count: Number of runs to execute during the sweep
+        model_class (Type[nn.Module]): The actual model class to be instantiated.
+            This should be a class reference (e.g., MyModel), not a string.
         build_dataloaders_fn: Function to construct training and validation data loaders
-        build_model_fn: Function to construct the model architecture
         build_optimizer_fn: Function to construct the optimizer
         train_epoch_fn: Function to execute training for a single epoch
         validate_fn: Function to validate model performance
@@ -354,8 +374,8 @@ def run_sweep(
     
     # Create the training function with the provided components
     train_fn = create_train_fn(
+        model_class=model_class,
         build_dataloaders_fn=build_dataloaders_fn,
-        build_model_fn=build_model_fn,
         build_optimizer_fn=build_optimizer_fn,
         train_epoch_fn=train_epoch_fn,
         validate_fn=validate_fn,
