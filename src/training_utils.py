@@ -185,7 +185,7 @@ def create_train_fn(
             config = wandb.config
 
             tr_loader, val_loader = build_dataloaders_fn(config)
-            network = build_network_fn(config).to(device)
+            network = build_network_fn(dict(config)).to(device)
             # TODO: Add as a param
             criterion = nn.BCEWithLogitsLoss().to(device)
             optimizer = build_optimizer_fn(network, config.optimizer, config.learning_rate)
@@ -259,6 +259,36 @@ def create_checkpoint_dirs(run_id, config, network, base_path="model_weights", c
     #     "checkpoints_dir": checkpoints_dir,
     #     "config_path": config_path
     # }
+
+def load_checkpoint(checkpoint_path, run_config_path, build_network_fn):
+    """
+    Loads a checkpoint and its configuration to CPU.
+
+    Args:
+        checkpoint_path (str or Path): Path to the saved model checkpoint (.pt file).
+        run_config_path (str or Path): Path to the YAML configuration file for the run.
+        build_network_fn: The function to build an instance of the network based on a yaml config file
+        CAREFUL! Not the same as a wandb config
+
+    Returns:
+        network (nn.Module): The model with loaded state_dict.
+        optimizer (torch.optim.Optimizer): The optimizer with loaded state_dict.
+        config (dict): The configuration dictionary.
+    """
+    # Load config
+    with open(run_config_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    # Dynamically load model class based on saved config
+    network = build_network_fn(config)
+    optimizer = build_optimizer(network, config["optimizer"], config["learning_rate"])
+
+    checkpoint = torch.load(checkpoint_path, map_location=torch.device("cpu"))
+    network.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+    return network, optimizer, config
+
 
 
 def build_optimizer(network, optimizer, learning_rate):
