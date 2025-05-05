@@ -147,7 +147,7 @@ Models are saved based on the `checkpoint_freq` parameter:
 ```python
 from src.training_utils import load_checkpoint
 
-model = load_checkpoint(
+model, optimizer, config = load_checkpoint(
     checkpoint_path,    # Path to .pt file
     run_config_path,    # Path to config.yaml
     model_class         # Your model class
