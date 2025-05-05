@@ -8,4 +8,4 @@
 
 source $HOME/venvs/venv-NML/bin/activate
 cd $HOME/NML
-python sweep_transformer.py configs/transformer_config.yaml --count 40
+python sweep_transformer.py configs/transformer_config.yaml --count 108 --seed 1

@@ -8,4 +8,4 @@
 
 source $HOME/venvs/venv-NML/bin/activate
 cd $HOME/NML
-python test_sweep.py configs/test_config.yaml --count 32
+python test_sweep.py configs/test_config.yaml --count 20 --seed 1
