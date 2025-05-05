@@ -47,7 +47,7 @@ You can customize the `build_dataloaders_fn` to handle additional parameters fro
 
 3. **Define the optimizer** (optional): Map configuration parameters to optimizer settings
 
-4. **Customize training** (optional): Override default training/validation functions for special cases
+4. **Customize training** (optional): Override default training/validation functions for special cases (I think GNNs might need a different input)
 
 5. **Create sweep configuration**: Define parameters in YAML matching your model's `__init__` parameters
 
