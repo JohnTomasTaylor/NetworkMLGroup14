@@ -116,6 +116,27 @@ Important:
         config.yaml
 ```
 
+## Running on Izar (SCITAS)
+
+To run your sweeps on the SCITAS Izar cluster:
+
+1. Check the example files in the `/scitas` directory
+2. Submit your job:
+   ```bash
+   sbatch scitas/your_scitas_run_file
+   ```
+
+3. Monitor job status:
+   ```bash
+   Squeue
+   ```
+
+4. For debugging, use interactive mode:
+   ```bash
+   Sinteract -g gpu:1 -c10 -t 2:0:0 -m 32G
+   ```
+   This requests 1 GPU, 10 CPU cores, 2 hours of runtime, and 32GB of memory.
+
 ## Working with Checkpoints
 
 Models are saved based on the `checkpoint_freq` parameter:
