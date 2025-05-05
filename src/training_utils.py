@@ -166,8 +166,8 @@ def create_train_fn(
             This should be a class reference (e.g., MyModel), not a string.
         build_dataloaders_fn (callable): A function that takes a `config` dictionary and 
             returns a tuple of PyTorch DataLoaders (train_loader, val_loader)
-        build_optimizer_fn (callable): A function that takes a model, an optimizer name, 
-            and a learning rate, and returns an optimizer instance.
+        build_optimizer_fn (callable): A function that takes a model and a `config` 
+            dictionary and returns an optimizer instance.
         train_epoch (callable): A function that takes (train_loader, model, optimizer, 
             criterion, device) and performs one training epoch, returning 
             (train_loss, train_metrics).
@@ -191,7 +191,7 @@ def create_train_fn(
             model = build_model(model_class, config).to(device)
             # TODO: Add criterion as a param
             criterion = nn.BCEWithLogitsLoss().to(device)
-            optimizer = build_optimizer_fn(model, config["optimizer"], config["learning_rate"])
+            optimizer = build_optimizer_fn(model, config)
 
             # Prepare the checkpoin directories
             create_checkpoint_dirs(run.id, config, model, checkpoints=bool(checkpoint_freq))
@@ -302,16 +302,19 @@ def build_model(model_class, config: dict):
     return model_class(**model_kwargs)
 
 
-def build_optimizer(model, optimizer, learning_rate):
+def build_optimizer(model, config):
     """
     Builds the optimizer for the run according to the wandb configs
     """
+    optimizer = config.get("optimizer", "adam")
+
     if optimizer == "sgd":
         optimizer = optim.SGD(model.parameters(),
-                              lr=learning_rate, momentum=0.9)
+                              lr=config["learning_rate"], momentum=0.9)
     elif optimizer == "adam":
         optimizer = optim.Adam(model.parameters(),
-                               lr=learning_rate)
+                               lr=config["learning_rate"],
+                               weight_decay=config.get("weight_decay", 0.0))
     return optimizer
 
 def create_build_dataloaders(dataset_tr, dataset_val):

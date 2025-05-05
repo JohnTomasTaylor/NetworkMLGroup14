@@ -5,3 +5,5 @@ torch
 scipy
 scikit-learn
 wandb
+PyYAML
+tqdm
