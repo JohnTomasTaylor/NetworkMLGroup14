@@ -1,4 +1,4 @@
-# EEG Seizure Detection - Model Sweep Framework
+# EEG Seizure Detection - Model Sweep
 
 ## Setup
 ```bash
