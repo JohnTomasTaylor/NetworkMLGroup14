@@ -38,7 +38,7 @@ GCN_LSTM_V1/
 
 evaluation/
 ├── evaluation_metrics.py          # Model evaluation scripts
-├── kaggle_submission_v2.py        # Alternate submission generator
+├── submission.py        # Alternate submission generator
 
 src/
 ├── base_lstm_model.py             # Standard LSTM training and model code
