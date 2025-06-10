@@ -126,6 +126,6 @@ Or use alternate scripts from `evaluation/` for prediction, ensembling, and subm
 If you use or adapt this repository, please cite:
 
 > Zimu Zhao, John Taylor, Daniele Belfiore, Ahmed Abdelmalek  
-> "GCN+LSTM for EEG Seizure Detection"  
+> "Multi-Scale GCN-LSTM for EEG Seizure Detection"  
 > EPFL, 2025
 
