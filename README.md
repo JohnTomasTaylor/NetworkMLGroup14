@@ -18,34 +18,40 @@ We propose a multi-branch architecture (`MultiScale_GCN_LSTM`) that:
 
 ```
 Data preprocessing/
-├── feature_extraction.py          # 2-second fixed-window feature extraction
-├── advance_feature_extraction.py  # Multi-scale feature extraction (0.5s, 1s, 2s)
+├── feature_extraction.py           # 2-second fixed-window feature extraction
+├── advance_feature_extraction.py   # Multi-scale feature extraction (0.5s, 1s, 2s)
 
 EEG_nml/
-├── EEG_nml.ipynb                  # Initial GCN model prototype (single-window)
+├── EEG_nml.ipynb                   # Initial prototype GCN training notebook
 
 GCN_LSTM_Pro/
-├── advance_model.py               # Multi-scale model definition
-├── advance_train.py               # Base training script
-├── advance_train_focal_loss.py    # With focal loss
-├── advance_model_dropout.py       # With additional dropout
-├── dataset_multiwin.py            # Multi-window dataset loader
-├── best_model_final.pth           # ✅ Best-performing model checkpoint
-├── submission.py                  # Kaggle inference + CSV generation
+├── advance_model.py                # Multi-scale model definition
+├── advance_model_dropout.py        # Variant with extra dropout
+├── advance_train.py                # Training script
+├── advance_train_focal_loss.py     # Variant with focal loss
+├── dataset_multiwin.py             # Multi-window dataset class
+├── best_model_final.pth            # ✅ Best model checkpoint
+├── submission.py                   # Kaggle submission generator
 
 GCN_LSTM_V1/
-├── ...                            # Legacy version based on earlier feature set
+├── (legacy) Model + dataset code for old feature version
 
 evaluation/
-├── evaluation_metrics.py          # Model evaluation scripts
-├── submission.py        # Alternate submission generator
+├── config.py, data.py, utils.py    # Evaluation config and helpers
+├── evaluate.py, threshold.py       # Metric computation and thresholding
+├── predict.py, submission.py       # Alternate inference + submission pipeline
+├── ensemble.py, model_loader.py    # Ensembling and model loading logic
 
 src/
-├── base_lstm_model.py             # Standard LSTM training and model code
+├── constants.py                    # Basic constants
+├── dataloading.py                 # LSTM-specific dataloader
+├── transforms.py, training_utils.py  # Preprocessing and training helpers
+├── models/                         # Base LSTM model definitions
 
-configs/, scitas/                  # Configuration files and Slurm scripts
-requirements.txt                   # Python dependency list
-README.md                          # You're reading it!
+configs/, scitas/                   # Config YAMLs, Slurm scripts
+
+requirements.txt                    # Python dependency list
+README.md                           # You're reading it!
 ```
 
 ---
@@ -65,51 +71,53 @@ pip install -r requirements.txt
   python Data\ preprocessing/feature_extraction.py
   ```
 
-- For **multi-scale (0.5s, 1s, 2s) extraction**:
+- For **multi-scale (0.5s, 1s, 2s)**:
   ```bash
   python Data\ preprocessing/advance_feature_extraction.py
   ```
 
 ### 3. Training
 
-- Run base multi-scale training:
+- Run baseline multi-scale model:
   ```bash
   python GCN_LSTM_Pro/advance_train.py
   ```
 
-- Try variants with loss or regularisation tricks:
+- Try focal loss or dropout variants:
   ```bash
   python GCN_LSTM_Pro/advance_train_focal_loss.py
   ```
 
 ### 4. Inference & Submission
 
-- Use the best model to generate submission CSV:
+- Use best model to generate submission:
   ```bash
   python GCN_LSTM_Pro/submission.py
   ```
+
+Or use alternate scripts from `evaluation/` for prediction, ensembling, and submission generation.
 
 ---
 
 ## 🏆 Best Model
 
 - File: `GCN_LSTM_Pro/best_model_final.pth`
-- Description: Multi-scale GCN+LSTM with dynamic graphs and attention fusion.
-- Performance: Macro-F1 ≈ 0.82 (5-fold CV)
+- Description: Multi-scale GCN+LSTM with dynamic functional graphs and attention fusion.
+- Performance: Macro-F1 ≈ 0.82 on cross-validation
 
 ---
 
 ## 🔗 Resources
 
-- 📁 [Google Drive with models and features](https://drive.google.com/drive/folders/1RJcT7uc8gai7Kw8nBvR_me4ZkgyybQj4)
+- 📁 [Google Drive – features, models, and outputs](https://drive.google.com/drive/folders/1RJcT7uc8gai7Kw8nBvR_me4ZkgyybQj4)
 
 ---
 
 ## ⚠️ Notes
 
-- `evaluation/` includes model evaluation scripts and an alternate submission pipeline.
-- `GCN_LSTM_V1/` contains a deprecated version using outdated features. We recommend using the `GCN_LSTM_Pro/` pipeline.
-- `src/` contains standard LSTM training code for comparison.
+- The `evaluation/` directory contains evaluation tools, ensembling logic, and an alternate submission pipeline.
+- The `src/` directory contains basic LSTM training code and preprocessing utilities.
+- `GCN_LSTM_V1/` is deprecated and kept for reference only.
 
 ---
 
@@ -120,5 +128,4 @@ If you use or adapt this repository, please cite:
 > Zimu Zhao, John Taylor, Daniele Belfiore, Ahmed Abdelmalek  
 > "Graph-Based Neural Networks for EEG Seizure Detection: A Comparative Analysis"  
 > EPFL, 2025
-
 
