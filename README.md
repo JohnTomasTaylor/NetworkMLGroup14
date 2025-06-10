@@ -16,33 +16,37 @@ We propose a multi-branch architecture (`MultiScale_GCN_LSTM`) that:
 
 ## 📁 Repository Structure
 
-├── Data preprocessing/
-│   ├── feature_extraction.py         # For 2-second fixed-window feature extraction
-│   └── advance_feature_extraction.py # For 0.5s / 1s / 2s multi-window extraction
-│
-├── EEG_nml/
-│   └── EEG_nml.ipynb                 # Initial GCN model (basic version, single window)
-│
-├── GCN_LSTM_Pro/
-│   ├── advance_model.py             # Multi-scale model definition
-│   ├── advance_train.py             # Training script (base)
-│   ├── advance_train_focal_loss.py  # Training script with focal loss
-│   ├── advance_model_dropout.py     # Model variant with extra dropout
-│   ├── dataset_multiwin.py          # Multi-window dataset class
-│   ├── best_model_final.pth         # ✅ Best-performing trained model
-│   ├── submission.py                # Kaggle inference + submission generation
-│   └── *.pth                        # Additional saved models (Pro, Pro2, etc.)
-│
-├── GCN_LSTM_V1/
-│   └── (legacy code)                # Older version using outdated features
-│                                    # Includes model, dataset, and training logic
-│
-├── evaluation/
-│   └── (team-written)               # ⚠️ Scripts written by teammate – unclear purpose
-│
-├── configs/, scitas/, src/         # Supporting configs, Slurm batch scripts, and common utilities
-├── requirements.txt                # Python dependency list
-├── README.md                       # You're reading it!
+```
+Data preprocessing/
+├── feature_extraction.py          # 2-second fixed-window feature extraction
+├── advance_feature_extraction.py  # Multi-scale feature extraction (0.5s, 1s, 2s)
+
+EEG_nml/
+├── EEG_nml.ipynb                  # Initial GCN model prototype (single-window)
+
+GCN_LSTM_Pro/
+├── advance_model.py               # Multi-scale model definition
+├── advance_train.py               # Base training script
+├── advance_train_focal_loss.py    # With focal loss
+├── advance_model_dropout.py       # With additional dropout
+├── dataset_multiwin.py            # Multi-window dataset loader
+├── best_model_final.pth           # ✅ Best-performing model checkpoint
+├── submission.py                  # Kaggle inference + CSV generation
+
+GCN_LSTM_V1/
+├── ...                            # Legacy version based on earlier feature set
+
+evaluation/
+├── evaluation_metrics.py          # Model evaluation scripts
+├── kaggle_submission_v2.py        # Alternate submission generator
+
+src/
+├── base_lstm_model.py             # Standard LSTM training and model code
+
+configs/, scitas/                  # Configuration files and Slurm scripts
+requirements.txt                   # Python dependency list
+README.md                          # You're reading it!
+```
 
 ---
 
@@ -56,55 +60,56 @@ pip install -r requirements.txt
 
 ### 2. Feature Extraction
 
-- For **2-second fixed window**:
+- For **2-second fixed windows**:
   ```bash
   python Data\ preprocessing/feature_extraction.py
   ```
 
-- For **multi-scale extraction (0.5s, 1s, 2s)**:
+- For **multi-scale (0.5s, 1s, 2s) extraction**:
   ```bash
   python Data\ preprocessing/advance_feature_extraction.py
   ```
 
 ### 3. Training
 
-- Run base multi-scale model:
+- Run base multi-scale training:
   ```bash
   python GCN_LSTM_Pro/advance_train.py
   ```
 
-- Try other variants with focal loss or dropout:
+- Try variants with loss or regularisation tricks:
   ```bash
   python GCN_LSTM_Pro/advance_train_focal_loss.py
   ```
 
 ### 4. Inference & Submission
 
-Use the best model to generate Kaggle submission:
-
-```bash
-python GCN_LSTM_Pro/submission.py
-```
-
-Output will be saved to:
-```
-D:\Documents\nml_data\submission.csv
-```
+- Use the best model to generate submission CSV:
+  ```bash
+  python GCN_LSTM_Pro/submission.py
+  ```
 
 ---
 
 ## 🏆 Best Model
 
 - File: `GCN_LSTM_Pro/best_model_final.pth`
-- Description: Multi-scale model with PCC graphs, BiLSTM, and attention fusion.
-- Performance: Achieved top results on private leaderboard (macro-F1 ≈ 0.82 on CV)
+- Description: Multi-scale GCN+LSTM with dynamic graphs and attention fusion.
+- Performance: Macro-F1 ≈ 0.82 (5-fold CV)
+
+---
+
+## 🔗 Resources
+
+- 📁 [Google Drive with models and features](https://drive.google.com/drive/folders/1RJcT7uc8gai7Kw8nBvR_me4ZkgyybQj4)
 
 ---
 
 ## ⚠️ Notes
 
-- The `evaluation/` folder contains scripts written by a teammate. Their functionality is currently unclear and not directly integrated into the main pipeline.
-- The `GCN_LSTM_V1/` folder contains an outdated codebase using a previous version of the feature extraction pipeline. For best performance, use the `GCN_LSTM_Pro/` version.
+- `evaluation/` includes model evaluation scripts and an alternate submission pipeline.
+- `GCN_LSTM_V1/` contains a deprecated version using outdated features. We recommend using the `GCN_LSTM_Pro/` pipeline.
+- `src/` contains standard LSTM training code for comparison.
 
 ---
 
@@ -116,4 +121,4 @@ If you use or adapt this repository, please cite:
 > "Graph-Based Neural Networks for EEG Seizure Detection: A Comparative Analysis"  
 > EPFL, 2025
 
----
+
